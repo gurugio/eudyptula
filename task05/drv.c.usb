@@ -1,0 +1,52 @@
+#include <linux/init.h>
+#include <linux/module.h>
+#include <linux/kernel.h>
+#include <linux/kthread.h>
+#include <linux/delay.h>
+#include <linux/slab.h>
+
+#include <linux/device.h>
+#include <linux/fs.h>
+#include <linux/uaccess.h>
+#include <linux/delay.h>
+#include <linux/usb/input.h>
+#include <linux/hid.h>
+
+
+MODULE_LICENSE("GPL");
+
+
+
+static int usb_task05_probe(struct usb_interface *iface,
+				    const struct usb_device_id *id)
+{
+	pr_debug("usb_task05_probe\n");
+	pr_debug("vendor=%d product=%d\n", id->idVendor, id->idProduct);
+	return 0;
+}
+
+static void usb_task05_disconnect(struct usb_interface *intf)
+{
+	pr_debug("usb_kbd_disconnect\n");
+}
+
+static struct usb_device_id usb_task05_id_table[] = {
+	{ USB_INTERFACE_INFO(USB_INTERFACE_CLASS_HID, USB_INTERFACE_SUBCLASS_BOOT,
+			     USB_INTERFACE_PROTOCOL_MOUSE) },
+	{ }
+};
+
+MODULE_DEVICE_TABLE(usb, usb_task05_id_table);
+
+static struct usb_driver usb_task05_driver = {
+	.name =		"usbtask05",
+	.probe =	usb_task05_probe,
+	.disconnect =	usb_task05_disconnect,
+	.id_table =	usb_task05_id_table,
+};
+
+/*
+ * module_usb_driver macro creates usb_task05_init and usb_task05_exit
+ * for module_init and module_exit
+ */
+module_usb_driver(usb_task05_driver);
