@@ -10,6 +10,7 @@
 #include <linux/uaccess.h>
 #include <linux/delay.h>
 #include <linux/debugfs.h>
+#include <linux/jiffies.h>
 
 MODULE_LICENSE("GPL");
 
@@ -47,7 +48,7 @@ static const struct file_operations eudyptula_id_fops = {
 
 static int __init hello_init(void)
 {
-	struct dentry *debugfs_id;
+	struct dentry *debugfs_id, *debugfs_jiffies;
 
 	eudyptula_debugfs_root = debugfs_create_dir("eudyptula", NULL);
 	if (!eudyptula_debugfs_root
@@ -67,6 +68,17 @@ static int __init hello_init(void)
 	if (!debugfs_id
 	    || debugfs_id == ERR_PTR(-ENODEV)) {
 		pr_err("failed to create debugfs file: id\n");
+		return 0;
+	}
+
+	debugfs_jiffies = debugfs_create_u64("jiffies",
+					     S_IRUSR |
+					     S_IRGRP | S_IROTH,
+					     eudyptula_debugfs_root,
+					     &jiffies_64);
+	if (!debugfs_jiffies
+	    || debugfs_jiffies == ERR_PTR(-ENODEV)) {
+		pr_err("failed to create debugfs file: jiffies\n");
 		return 0;
 	}
 	return 0;
