@@ -18,7 +18,53 @@ MODULE_LICENSE("GPL");
 #define MYIDLEN 12
 
 static struct dentry *eudyptula_debugfs_root;
+static char foo_buf[4096];
+static char foo_pos;
+static spinlock_t foo_lock;
 
+
+static ssize_t eudyptula_foo_read(struct file *file, char __user *buf,
+				  size_t count, loff_t *ppos)
+{
+	ssize_t ret;
+
+	spin_lock(&foo_lock);
+	ret = simple_read_from_buffer(buf, count, ppos, foo_buf, foo_pos);
+	spin_unlock(&foo_lock);
+	return ret;
+}
+
+static ssize_t eudyptula_foo_write(struct file *file, const char __user *buf,
+				   size_t count, loff_t *ppos)
+{
+	ssize_t ret;
+
+	/* TODO: LOCKING */
+	if (count > 4096 - foo_pos)
+		count = 4096 - foo_pos;
+
+	spin_lock(&foo_lock);
+	ret = simple_write_to_buffer(foo_buf, 4096 - foo_pos,
+				     ppos, buf, count);
+	if (ret < 0)
+		goto failed;
+	if (ret < count) {
+		ret = -EINVAL;
+		goto failed;
+	}
+	foo_pos = count;
+	spin_unlock(&foo_lock);
+	return count;
+failed:
+	spin_unlock(&foo_lock);
+	return ret;
+}
+
+static const struct file_operations eudyptula_foo_fops = {
+	.owner = THIS_MODULE,
+	.read = eudyptula_foo_read,
+	.write = eudyptula_foo_write,
+};
 
 static ssize_t eudyptula_id_read(struct file *file, char __user *buf,
 			   size_t count, loff_t *ppos)
@@ -48,7 +94,7 @@ static const struct file_operations eudyptula_id_fops = {
 
 static int __init hello_init(void)
 {
-	struct dentry *debugfs_id, *debugfs_jiffies;
+	struct dentry *debugfs_id, *debugfs_jiffies, *debugfs_foo;
 
 	eudyptula_debugfs_root = debugfs_create_dir("eudyptula", NULL);
 	if (!eudyptula_debugfs_root
@@ -79,6 +125,21 @@ static int __init hello_init(void)
 	if (!debugfs_jiffies
 	    || debugfs_jiffies == ERR_PTR(-ENODEV)) {
 		pr_err("failed to create debugfs file: jiffies\n");
+		return 0;
+	}
+
+	spin_lock_init(&foo_lock);
+	debugfs_foo = debugfs_create_file_size("foo",
+					       S_IRUSR | S_IWUSR |
+					       S_IRGRP |
+					       S_IROTH,
+					       eudyptula_debugfs_root,
+					       NULL,
+					       &eudyptula_foo_fops,
+					       4096);
+	if (!debugfs_foo
+	    || debugfs_foo == ERR_PTR(-ENODEV)) {
+		pr_err("failed to create debugfs file: foo\n");
 		return 0;
 	}
 	return 0;
