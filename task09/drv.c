@@ -44,7 +44,7 @@ static ssize_t foo_store(struct kobject *kobj, struct kobj_attribute *attr,
 }
 
 static struct kobj_attribute foo_attr =
-	__ATTR(foo, 0644, foo_show, foo_store);
+	__ATTR_RW(foo);
 
 static ssize_t jiffies_show(struct kobject *kobj,
 			    struct kobj_attribute *attr,
@@ -54,7 +54,7 @@ static ssize_t jiffies_show(struct kobject *kobj,
 }
 
 static struct kobj_attribute jiffies_attr =
-	__ATTR(jiffies, 0444, jiffies_show, NULL);
+	__ATTR_RO(jiffies);
 
 static ssize_t id_show(struct kobject *kobj,
 		       struct kobj_attribute *attr,
@@ -72,7 +72,7 @@ static ssize_t id_store(struct kobject *kobj, struct kobj_attribute *attr,
 }
 
 static struct kobj_attribute id_attr =
-	__ATTR(id, 0644, id_show, id_store);
+	__ATTR_RW(id);
 
 static struct attribute *attrs[] = {
 	&id_attr.attr,
