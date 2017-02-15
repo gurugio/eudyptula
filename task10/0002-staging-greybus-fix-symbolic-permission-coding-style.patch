@@ -1,0 +1,72 @@
+From a16a1f5019e353ecdeb1c1f1828153157ce317c0 Mon Sep 17 00:00:00 2001
+From: Gioh Kim <gi-oh.kim@profitbricks.com>
+Date: Thu, 9 Feb 2017 17:24:55 +0100
+Subject: [PATCH 2/2] staging: greybus: fix symbolic permission coding style
+ issues
+
+Fix "Octal permissions are preffered than symbolic ones" issues.
+
+Signed-off-by: Gioh Kim <gi-oh.kim@profitbricks.com>
+---
+ drivers/staging/greybus/es2.c      | 4 ++--
+ drivers/staging/greybus/loopback.c | 2 +-
+ drivers/staging/greybus/svc.c      | 6 +++---
+ 3 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/staging/greybus/es2.c b/drivers/staging/greybus/es2.c
+index 0eba059..f7b24e0 100644
+--- a/drivers/staging/greybus/es2.c
++++ b/drivers/staging/greybus/es2.c
+@@ -1152,7 +1152,7 @@ static void usb_log_enable(struct es2_ap_dev *es2)
+ 	if (IS_ERR(es2->apb_log_task))
+ 		return;
+ 	/* XXX We will need to rename this per APB */
+-	es2->apb_log_dentry = debugfs_create_file("apb_log", S_IRUGO,
++	es2->apb_log_dentry = debugfs_create_file("apb_log", 0444,
+ 						gb_debugfs_get(), es2,
+ 						&apb_log_fops);
+ }
+@@ -1409,7 +1409,7 @@ static int ap_probe(struct usb_interface *interface,
+ 
+ 	/* XXX We will need to rename this per APB */
+ 	es2->apb_log_enable_dentry = debugfs_create_file("apb_log_enable",
+-							(S_IWUSR | S_IRUGO),
++							0644,
+ 							gb_debugfs_get(), es2,
+ 							&apb_log_enable_fops);
+ 
+diff --git a/drivers/staging/greybus/loopback.c b/drivers/staging/greybus/loopback.c
+index 6c2a41c..f0ceee6 100644
+--- a/drivers/staging/greybus/loopback.c
++++ b/drivers/staging/greybus/loopback.c
+@@ -1209,7 +1209,7 @@ static int gb_loopback_probe(struct gb_bundle *bundle,
+ 	/* Create per-connection sysfs and debugfs data-points */
+ 	snprintf(name, sizeof(name), "raw_latency_%s",
+ 		 dev_name(&connection->bundle->dev));
+-	gb->file = debugfs_create_file(name, S_IFREG | S_IRUGO, gb_dev.root, gb,
++	gb->file = debugfs_create_file(name, S_IFREG | 0444, gb_dev.root, gb,
+ 				       &gb_loopback_debugfs_latency_ops);
+ 
+ 	gb->id = ida_simple_get(&loopback_ida, 0, 0, GFP_KERNEL);
+diff --git a/drivers/staging/greybus/svc.c b/drivers/staging/greybus/svc.c
+index 5549db2..516f827 100644
+--- a/drivers/staging/greybus/svc.c
++++ b/drivers/staging/greybus/svc.c
+@@ -803,11 +803,11 @@ static void gb_svc_pwrmon_debugfs_init(struct gb_svc *svc)
+ 		rail->svc = svc;
+ 
+ 		dir = debugfs_create_dir(fname, dent);
+-		debugfs_create_file("voltage_now", S_IRUGO, dir, rail,
++		debugfs_create_file("voltage_now", 0444, dir, rail,
+ 				    &pwrmon_debugfs_voltage_fops);
+-		debugfs_create_file("current_now", S_IRUGO, dir, rail,
++		debugfs_create_file("current_now", 0444, dir, rail,
+ 				    &pwrmon_debugfs_current_fops);
+-		debugfs_create_file("power_now", S_IRUGO, dir, rail,
++		debugfs_create_file("power_now", 0444, dir, rail,
+ 				    &pwrmon_debugfs_power_fops);
+ 	}
+ 
+-- 
+2.5.0
+

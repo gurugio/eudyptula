@@ -1,0 +1,383 @@
+From df4eadd08c34a9d66bfd95e6e98c4dbc4c165520 Mon Sep 17 00:00:00 2001
+From: Gioh Kim <gi-oh.kim@profitbricks.com>
+Date: Thu, 9 Feb 2017 17:12:21 +0100
+Subject: [PATCH 1/2] staging: greybus: fix "line over 80 characters" coding
+ style issues
+
+This patch fixes only obvious lines.
+There are still more issues.
+
+Signed-off-by: Gioh Kim <gi-oh.kim@profitbricks.com>
+---
+ drivers/staging/greybus/arche-apb-ctrl.c |  5 +++-
+ drivers/staging/greybus/arche-platform.c | 43 +++++++++++++++++++++-----------
+ drivers/staging/greybus/audio_codec.c    |  5 +++-
+ drivers/staging/greybus/bootrom.c        | 13 ++++++----
+ drivers/staging/greybus/es2.c            |  3 ++-
+ drivers/staging/greybus/fw-download.c    |  6 +++--
+ drivers/staging/greybus/gbphy.c          |  3 ++-
+ drivers/staging/greybus/gpio.c           |  3 ++-
+ drivers/staging/greybus/svc.c            | 26 +++++++++++--------
+ drivers/staging/greybus/uart.c           |  8 +++---
+ drivers/staging/greybus/vibrator.c       |  4 ++-
+ 11 files changed, 77 insertions(+), 42 deletions(-)
+
+diff --git a/drivers/staging/greybus/arche-apb-ctrl.c b/drivers/staging/greybus/arche-apb-ctrl.c
+index 17fa290..02243b4 100644
+--- a/drivers/staging/greybus/arche-apb-ctrl.c
++++ b/drivers/staging/greybus/arche-apb-ctrl.c
+@@ -168,7 +168,10 @@ static int standby_boot_seq(struct platform_device *pdev)
+ 	if (apb->init_disabled)
+ 		return 0;
+ 
+-	/* Even if it is in OFF state, then we do not want to change the state */
++	/*
++	 * Even if it is in OFF state,
++	 * then we do not want to change the state
++	 */
+ 	if (apb->state == ARCHE_PLATFORM_STATE_STANDBY ||
+ 			apb->state == ARCHE_PLATFORM_STATE_OFF)
+ 		return 0;
+diff --git a/drivers/staging/greybus/arche-platform.c b/drivers/staging/greybus/arche-platform.c
+index 338c2d3..aac1145 100644
+--- a/drivers/staging/greybus/arche-platform.c
++++ b/drivers/staging/greybus/arche-platform.c
+@@ -312,9 +312,11 @@ static irqreturn_t arche_platform_wd_irq(int irq, void *devid)
+ 		if (arche_pdata->wake_detect_state == WD_STATE_IDLE) {
+ 			arche_pdata->wake_detect_start = jiffies;
+ 			/*
+-			 * In the begining, when wake/detect goes low (first time), we assume
+-			 * it is meant for coldboot and set the flag. If wake/detect line stays low
+-			 * beyond 30msec, then it is coldboot else fallback to standby boot.
++			 * In the begining, when wake/detect goes low
++			 * (first time), we assume it is meant for coldboot
++			 * and set the flag. If wake/detect line stays low
++			 * beyond 30msec, then it is coldboot else fallback
++			 * to standby boot.
+ 			 */
+ 			arche_platform_set_wake_detect_state(arche_pdata,
+ 							     WD_STATE_BOOT_INIT);
+@@ -330,7 +332,8 @@ static irqreturn_t arche_platform_wd_irq(int irq, void *devid)
+ /*
+  * Requires arche_pdata->platform_state_mutex to be held
+  */
+-static int arche_platform_coldboot_seq(struct arche_platform_drvdata *arche_pdata)
++static int
++arche_platform_coldboot_seq(struct arche_platform_drvdata *arche_pdata)
+ {
+ 	int ret;
+ 
+@@ -364,7 +367,8 @@ static int arche_platform_coldboot_seq(struct arche_platform_drvdata *arche_pdat
+ /*
+  * Requires arche_pdata->platform_state_mutex to be held
+  */
+-static int arche_platform_fw_flashing_seq(struct arche_platform_drvdata *arche_pdata)
++static int
++arche_platform_fw_flashing_seq(struct arche_platform_drvdata *arche_pdata)
+ {
+ 	int ret;
+ 
+@@ -398,7 +402,8 @@ static int arche_platform_fw_flashing_seq(struct arche_platform_drvdata *arche_p
+ /*
+  * Requires arche_pdata->platform_state_mutex to be held
+  */
+-static void arche_platform_poweroff_seq(struct arche_platform_drvdata *arche_pdata)
++static void
++arche_platform_poweroff_seq(struct arche_platform_drvdata *arche_pdata)
+ {
+ 	unsigned long flags;
+ 
+@@ -561,14 +566,17 @@ static int arche_platform_probe(struct platform_device *pdev)
+ 	struct device_node *np = dev->of_node;
+ 	int ret;
+ 
+-	arche_pdata = devm_kzalloc(&pdev->dev, sizeof(*arche_pdata), GFP_KERNEL);
++	arche_pdata = devm_kzalloc(&pdev->dev, sizeof(*arche_pdata),
++				   GFP_KERNEL);
+ 	if (!arche_pdata)
+ 		return -ENOMEM;
+ 
+ 	/* setup svc reset gpio */
+ 	arche_pdata->is_reset_act_hi = of_property_read_bool(np,
+ 					"svc,reset-active-high");
+-	arche_pdata->svc_reset_gpio = of_get_named_gpio(np, "svc,reset-gpio", 0);
++	arche_pdata->svc_reset_gpio = of_get_named_gpio(np,
++							"svc,reset-gpio",
++							0);
+ 	if (arche_pdata->svc_reset_gpio < 0) {
+ 		dev_err(dev, "failed to get reset-gpio\n");
+ 		return arche_pdata->svc_reset_gpio;
+@@ -610,7 +618,8 @@ static int arche_platform_probe(struct platform_device *pdev)
+ 		dev_err(dev, "failed to get svc clock-req gpio\n");
+ 		return arche_pdata->svc_refclk_req;
+ 	}
+-	ret = devm_gpio_request(dev, arche_pdata->svc_refclk_req, "svc-clk-req");
++	ret = devm_gpio_request(dev, arche_pdata->svc_refclk_req,
++				"svc-clk-req");
+ 	if (ret) {
+ 		dev_err(dev, "failed to request svc-clk-req gpio: %d\n", ret);
+ 		return ret;
+@@ -634,13 +643,16 @@ static int arche_platform_probe(struct platform_device *pdev)
+ 	arche_pdata->num_apbs = of_get_child_count(np);
+ 	dev_dbg(dev, "Number of APB's available - %d\n", arche_pdata->num_apbs);
+ 
+-	arche_pdata->wake_detect_gpio = of_get_named_gpio(np, "svc,wake-detect-gpio", 0);
++	arche_pdata->wake_detect_gpio = of_get_named_gpio(np,
++							  "svc,wake-detect-gpio",
++							  0);
+ 	if (arche_pdata->wake_detect_gpio < 0) {
+ 		dev_err(dev, "failed to get wake detect gpio\n");
+ 		return arche_pdata->wake_detect_gpio;
+ 	}
+ 
+-	ret = devm_gpio_request(dev, arche_pdata->wake_detect_gpio, "wake detect");
++	ret = devm_gpio_request(dev, arche_pdata->wake_detect_gpio,
++				"wake detect");
+ 	if (ret) {
+ 		dev_err(dev, "Failed requesting wake_detect gpio %d\n",
+ 				arche_pdata->wake_detect_gpio);
+@@ -658,10 +670,11 @@ static int arche_platform_probe(struct platform_device *pdev)
+ 		gpio_to_irq(arche_pdata->wake_detect_gpio);
+ 
+ 	ret = devm_request_threaded_irq(dev, arche_pdata->wake_detect_irq,
+-			arche_platform_wd_irq,
+-			arche_platform_wd_irq_thread,
+-			IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING | IRQF_ONESHOT,
+-			dev_name(dev), arche_pdata);
++					arche_platform_wd_irq,
++					arche_platform_wd_irq_thread,
++					IRQF_TRIGGER_FALLING |
++					IRQF_TRIGGER_RISING | IRQF_ONESHOT,
++					dev_name(dev), arche_pdata);
+ 	if (ret) {
+ 		dev_err(dev, "failed to request wake detect IRQ %d\n", ret);
+ 		return ret;
+diff --git a/drivers/staging/greybus/audio_codec.c b/drivers/staging/greybus/audio_codec.c
+index 30941f9..25c8bb4 100644
+--- a/drivers/staging/greybus/audio_codec.c
++++ b/drivers/staging/greybus/audio_codec.c
+@@ -838,7 +838,10 @@ int gbaudio_register_module(struct gbaudio_module_info *module)
+ 		snd_soc_dapm_link_component_dai_widgets(codec->card,
+ 							&codec->dapm);
+ #ifdef CONFIG_SND_JACK
+-		/* register jack devices for this module from codec->jack_list */
++		/*
++		 * register jack devices for this module
++		 * from codec->jack_list
++		 */
+ 		list_for_each_entry(jack, &codec->jack_list, list) {
+ 			if ((jack == &module->headset_jack)
+ 			    || (jack == &module->button_jack))
+diff --git a/drivers/staging/greybus/bootrom.c b/drivers/staging/greybus/bootrom.c
+index 5f90721..06df0ce 100644
+--- a/drivers/staging/greybus/bootrom.c
++++ b/drivers/staging/greybus/bootrom.c
+@@ -53,7 +53,8 @@ static void free_firmware(struct gb_bootrom *bootrom)
+ static void gb_bootrom_timedout(struct work_struct *work)
+ {
+ 	struct delayed_work *dwork = to_delayed_work(work);
+-	struct gb_bootrom *bootrom = container_of(dwork, struct gb_bootrom, dwork);
++	struct gb_bootrom *bootrom = container_of(dwork,
++						  struct gb_bootrom, dwork);
+ 	struct device *dev = &bootrom->connection->bundle->dev;
+ 	const char *reason;
+ 
+@@ -187,7 +188,8 @@ static int find_firmware(struct gb_bootrom *bootrom, u8 stage)
+ static int gb_bootrom_firmware_size_request(struct gb_operation *op)
+ {
+ 	struct gb_bootrom *bootrom = gb_connection_get_data(op->connection);
+-	struct gb_bootrom_firmware_size_request *size_request = op->request->payload;
++	struct gb_bootrom_firmware_size_request *size_request =
++		op->request->payload;
+ 	struct gb_bootrom_firmware_size_response *size_response;
+ 	struct device *dev = &op->connection->bundle->dev;
+ 	int ret;
+@@ -220,7 +222,8 @@ static int gb_bootrom_firmware_size_request(struct gb_operation *op)
+ 	size_response = op->response->payload;
+ 	size_response->size = cpu_to_le32(bootrom->fw->size);
+ 
+-	dev_dbg(dev, "%s: firmware size %d bytes\n", __func__, size_response->size);
++	dev_dbg(dev, "%s: firmware size %d bytes\n",
++		__func__, size_response->size);
+ 
+ unlock:
+ 	mutex_unlock(&bootrom->mutex);
+@@ -287,8 +290,8 @@ static int gb_bootrom_get_firmware(struct gb_operation *op)
+ 	firmware_response = op->response->payload;
+ 	memcpy(firmware_response->data, fw->data + offset, size);
+ 
+-	dev_dbg(dev, "responding with firmware (offs = %u, size = %u)\n", offset,
+-		size);
++	dev_dbg(dev, "responding with firmware (offs = %u, size = %u)\n",
++		offset, size);
+ 
+ unlock:
+ 	mutex_unlock(&bootrom->mutex);
+diff --git a/drivers/staging/greybus/es2.c b/drivers/staging/greybus/es2.c
+index 93afd93..0eba059 100644
+--- a/drivers/staging/greybus/es2.c
++++ b/drivers/staging/greybus/es2.c
+@@ -1085,7 +1085,8 @@ static void apb_log_get(struct es2_ap_dev *es2, char *buf)
+ 		retval = usb_control_msg(es2->usb_dev,
+ 					usb_rcvctrlpipe(es2->usb_dev, 0),
+ 					GB_APB_REQUEST_LOG,
+-					USB_DIR_IN | USB_TYPE_VENDOR | USB_RECIP_INTERFACE,
++					USB_DIR_IN | USB_TYPE_VENDOR |
++					USB_RECIP_INTERFACE,
+ 					0x00, 0x00,
+ 					buf,
+ 					APB1_LOG_MSG_SIZE,
+diff --git a/drivers/staging/greybus/fw-download.c b/drivers/staging/greybus/fw-download.c
+index 2d72468..8a1a413 100644
+--- a/drivers/staging/greybus/fw-download.c
++++ b/drivers/staging/greybus/fw-download.c
+@@ -130,7 +130,8 @@ static void free_firmware(struct fw_download *fw_download,
+ static void fw_request_timedout(struct work_struct *work)
+ {
+ 	struct delayed_work *dwork = to_delayed_work(work);
+-	struct fw_request *fw_req = container_of(dwork, struct fw_request, dwork);
++	struct fw_request *fw_req = container_of(dwork,
++						 struct fw_request, dwork);
+ 	struct fw_download *fw_download = fw_req->fw_download;
+ 
+ 	dev_err(fw_download->parent,
+@@ -239,7 +240,8 @@ static int fw_download_find_firmware(struct gb_operation *op)
+ 	tag = (const char *)request->firmware_tag;
+ 
+ 	/* firmware_tag must be null-terminated */
+-	if (strnlen(tag, GB_FIRMWARE_TAG_MAX_SIZE) == GB_FIRMWARE_TAG_MAX_SIZE) {
++	if (strnlen(tag, GB_FIRMWARE_TAG_MAX_SIZE) ==
++	    GB_FIRMWARE_TAG_MAX_SIZE) {
+ 		dev_err(fw_download->parent,
+ 			"firmware-tag is not null-terminated\n");
+ 		return -EINVAL;
+diff --git a/drivers/staging/greybus/gbphy.c b/drivers/staging/greybus/gbphy.c
+index bcde7c9..64a1eb9 100644
+--- a/drivers/staging/greybus/gbphy.c
++++ b/drivers/staging/greybus/gbphy.c
+@@ -104,7 +104,8 @@ static int gbphy_dev_uevent(struct device *dev, struct kobj_uevent_env *env)
+ }
+ 
+ static const struct gbphy_device_id *
+-gbphy_dev_match_id(struct gbphy_device *gbphy_dev, struct gbphy_driver *gbphy_drv)
++gbphy_dev_match_id(struct gbphy_device *gbphy_dev,
++		   struct gbphy_driver *gbphy_drv)
+ {
+ 	const struct gbphy_device_id *id = gbphy_drv->id_table;
+ 
+diff --git a/drivers/staging/greybus/gpio.c b/drivers/staging/greybus/gpio.c
+index 558550c..0eabfe1 100644
+--- a/drivers/staging/greybus/gpio.c
++++ b/drivers/staging/greybus/gpio.c
+@@ -557,7 +557,8 @@ static void gb_gpio_irqchip_remove(struct gb_gpio_controller *ggc)
+ 	/* Remove all IRQ mappings and delete the domain */
+ 	if (ggc->irqdomain) {
+ 		for (offset = 0; offset < (ggc->line_max + 1); offset++)
+-			irq_dispose_mapping(irq_find_mapping(ggc->irqdomain, offset));
++			irq_dispose_mapping(irq_find_mapping(ggc->irqdomain,
++							     offset));
+ 		irq_domain_remove(ggc->irqdomain);
+ 	}
+ 
+diff --git a/drivers/staging/greybus/svc.c b/drivers/staging/greybus/svc.c
+index be151a6..5549db2 100644
+--- a/drivers/staging/greybus/svc.c
++++ b/drivers/staging/greybus/svc.c
+@@ -678,7 +678,8 @@ static int gb_svc_version_request(struct gb_operation *op)
+ static ssize_t pwr_debugfs_voltage_read(struct file *file, char __user *buf,
+ 					size_t len, loff_t *offset)
+ {
+-	struct svc_debugfs_pwrmon_rail *pwrmon_rails = file_inode(file)->i_private;
++	struct svc_debugfs_pwrmon_rail *pwrmon_rails =
++		file_inode(file)->i_private;
+ 	struct gb_svc *svc = pwrmon_rails->svc;
+ 	int ret, desc;
+ 	u32 value;
+@@ -701,7 +702,8 @@ static ssize_t pwr_debugfs_voltage_read(struct file *file, char __user *buf,
+ static ssize_t pwr_debugfs_current_read(struct file *file, char __user *buf,
+ 					size_t len, loff_t *offset)
+ {
+-	struct svc_debugfs_pwrmon_rail *pwrmon_rails = file_inode(file)->i_private;
++	struct svc_debugfs_pwrmon_rail *pwrmon_rails =
++		file_inode(file)->i_private;
+ 	struct gb_svc *svc = pwrmon_rails->svc;
+ 	int ret, desc;
+ 	u32 value;
+@@ -724,7 +726,8 @@ static ssize_t pwr_debugfs_current_read(struct file *file, char __user *buf,
+ static ssize_t pwr_debugfs_power_read(struct file *file, char __user *buf,
+ 				      size_t len, loff_t *offset)
+ {
+-	struct svc_debugfs_pwrmon_rail *pwrmon_rails = file_inode(file)->i_private;
++	struct svc_debugfs_pwrmon_rail *pwrmon_rails =
++		file_inode(file)->i_private;
+ 	struct gb_svc *svc = pwrmon_rails->svc;
+ 	int ret, desc;
+ 	u32 value;
+@@ -924,14 +927,15 @@ static void gb_svc_process_hello_deferred(struct gb_operation *operation)
+ 	 * Power Mode Changes is resolved.
+ 	 */
+ 	ret = gb_svc_intf_set_power_mode(svc, svc->ap_intf_id,
+-					GB_SVC_UNIPRO_HS_SERIES_A,
+-					GB_SVC_UNIPRO_SLOW_AUTO_MODE,
+-					2, 1,
+-					GB_SVC_SMALL_AMPLITUDE, GB_SVC_NO_DE_EMPHASIS,
+-					GB_SVC_UNIPRO_SLOW_AUTO_MODE,
+-					2, 1,
+-					0, 0,
+-					NULL, NULL);
++					 GB_SVC_UNIPRO_HS_SERIES_A,
++					 GB_SVC_UNIPRO_SLOW_AUTO_MODE,
++					 2, 1,
++					 GB_SVC_SMALL_AMPLITUDE,
++					 GB_SVC_NO_DE_EMPHASIS,
++					 GB_SVC_UNIPRO_SLOW_AUTO_MODE,
++					 2, 1,
++					 0, 0,
++					 NULL, NULL);
+ 
+ 	if (ret)
+ 		dev_warn(&svc->dev,
+diff --git a/drivers/staging/greybus/uart.c b/drivers/staging/greybus/uart.c
+index 6d39f4a..6177b9c 100644
+--- a/drivers/staging/greybus/uart.c
++++ b/drivers/staging/greybus/uart.c
+@@ -630,8 +630,9 @@ static int get_serial_info(struct gb_tty *gb_tty,
+ 	tmp.xmit_fifo_size = 16;
+ 	tmp.baud_base = 9600;
+ 	tmp.close_delay = gb_tty->port.close_delay / 10;
+-	tmp.closing_wait = gb_tty->port.closing_wait == ASYNC_CLOSING_WAIT_NONE ?
+-				ASYNC_CLOSING_WAIT_NONE : gb_tty->port.closing_wait / 10;
++	tmp.closing_wait =
++		gb_tty->port.closing_wait == ASYNC_CLOSING_WAIT_NONE ?
++		ASYNC_CLOSING_WAIT_NONE : gb_tty->port.closing_wait / 10;
+ 
+ 	if (copy_to_user(info, &tmp, sizeof(tmp)))
+ 		return -EFAULT;
+@@ -1000,7 +1001,8 @@ static int gb_tty_init(void)
+ 	gb_tty_driver->subtype = SERIAL_TYPE_NORMAL;
+ 	gb_tty_driver->flags = TTY_DRIVER_REAL_RAW | TTY_DRIVER_DYNAMIC_DEV;
+ 	gb_tty_driver->init_termios = tty_std_termios;
+-	gb_tty_driver->init_termios.c_cflag = B9600 | CS8 | CREAD | HUPCL | CLOCAL;
++	gb_tty_driver->init_termios.c_cflag = B9600 | CS8 |
++		CREAD | HUPCL | CLOCAL;
+ 	tty_set_operations(gb_tty_driver, &gb_ops);
+ 
+ 	retval = tty_register_driver(gb_tty_driver);
+diff --git a/drivers/staging/greybus/vibrator.c b/drivers/staging/greybus/vibrator.c
+index 4ba0e16..77a2365 100644
+--- a/drivers/staging/greybus/vibrator.c
++++ b/drivers/staging/greybus/vibrator.c
+@@ -70,7 +70,9 @@ static void gb_vibrator_worker(struct work_struct *work)
+ {
+ 	struct delayed_work *delayed_work = to_delayed_work(work);
+ 	struct gb_vibrator_device *vib =
+-		container_of(delayed_work, struct gb_vibrator_device, delayed_work);
++		container_of(delayed_work,
++			     struct gb_vibrator_device,
++			     delayed_work);
+ 
+ 	turn_off(vib);
+ }
+-- 
+2.5.0
+
