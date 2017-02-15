@@ -1,0 +1,118 @@
+From 5d46708aced12b364e9d7354b20c84eab3efde69 Mon Sep 17 00:00:00 2001
+From: Gioh Kim <gi-oh.kim@profitbricks.com>
+Date: Tue, 31 Jan 2017 08:51:43 +0100
+Subject: [832a404c8ce0] [PATCH 02/02] Task 08: add foo file
+
+root@ws00837:/home/gohkim/study/eudyptula/task08# insmod drv.ko
+root@ws00837:/home/gohkim/study/eudyptula/task08# cat /sys/kernel/debug/eudyptula/foo
+root@ws00837:/home/gohkim/study/eudyptula/task08# echo -n "asdfasdfasdfasdf" > /sys/kernel/debug/eudyptula/foo
+asdfasdfasdfasdfroot@ws00837:/home/gohkim/study/eudyptula/task08#
+root@ws00837:/home/gohkim/study/eudyptula/task08# echo -n "123456789" > /sys/kernel/debug/eudyptula/foo
+root@ws00837:/home/gohkim/study/eudyptula/task08# cat /sys/kernel/debug/eudyptula/foo
+123456789root@ws00837:/home/gohkim/study/eudyptula/task08#
+root@ws00837:/home/gohkim/study/eudyptula/task08#
+root@ws00837:/home/gohkim/study/eudyptula/task08# ls -l
+/sys/kernel/debug/eudyptula/
+total 0
+-rw-r--r-- 1 root root  0 Jan 30 15:28 foo
+-rw-rw-rw- 1 root root 12 Jan 30 15:27 id
+-r--r--r-- 1 root root  0 Jan 30 15:27 jiffies
+
+Signed-off-by: Gioh Kim <gi-oh.kim@profitbricks.com>
+---
+ task08/drv.c | 63 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 62 insertions(+), 1 deletion(-)
+
+diff --git a/task08/drv.c b/task08/drv.c
+index 8cbb2e5..58f1846 100644
+--- a/task08/drv.c
++++ b/task08/drv.c
+@@ -18,8 +18,54 @@ MODULE_LICENSE("GPL");
+ #define MYIDLEN 12
+ 
+ static struct dentry *eudyptula_debugfs_root;
++static char foo_buf[4096];
++static char foo_pos;
++static spinlock_t foo_lock;
+ 
+ 
++static ssize_t eudyptula_foo_read(struct file *file, char __user *buf,
++				  size_t count, loff_t *ppos)
++{
++	ssize_t ret;
++
++	spin_lock(&foo_lock);
++	ret = simple_read_from_buffer(buf, count, ppos, foo_buf, foo_pos);
++	spin_unlock(&foo_lock);
++	return ret;
++}
++
++static ssize_t eudyptula_foo_write(struct file *file, const char __user *buf,
++				   size_t count, loff_t *ppos)
++{
++	ssize_t ret;
++
++	/* TODO: LOCKING */
++	if (count > 4096 - foo_pos)
++		count = 4096 - foo_pos;
++
++	spin_lock(&foo_lock);
++	ret = simple_write_to_buffer(foo_buf, 4096 - foo_pos,
++				     ppos, buf, count);
++	if (ret < 0)
++		goto failed;
++	if (ret < count) {
++		ret = -EINVAL;
++		goto failed;
++	}
++	foo_pos = count;
++	spin_unlock(&foo_lock);
++	return count;
++failed:
++	spin_unlock(&foo_lock);
++	return ret;
++}
++
++static const struct file_operations eudyptula_foo_fops = {
++	.owner = THIS_MODULE,
++	.read = eudyptula_foo_read,
++	.write = eudyptula_foo_write,
++};
++
+ static ssize_t eudyptula_id_read(struct file *file, char __user *buf,
+ 			   size_t count, loff_t *ppos)
+ {
+@@ -48,7 +94,7 @@ static const struct file_operations eudyptula_id_fops = {
+ 
+ static int __init hello_init(void)
+ {
+-	struct dentry *debugfs_id, *debugfs_jiffies;
++	struct dentry *debugfs_id, *debugfs_jiffies, *debugfs_foo;
+ 
+ 	eudyptula_debugfs_root = debugfs_create_dir("eudyptula", NULL);
+ 	if (!eudyptula_debugfs_root
+@@ -81,6 +127,21 @@ static int __init hello_init(void)
+ 		pr_err("failed to create debugfs file: jiffies\n");
+ 		return 0;
+ 	}
++
++	spin_lock_init(&foo_lock);
++	debugfs_foo = debugfs_create_file_size("foo",
++					       S_IRUSR | S_IWUSR |
++					       S_IRGRP |
++					       S_IROTH,
++					       eudyptula_debugfs_root,
++					       NULL,
++					       &eudyptula_foo_fops,
++					       4096);
++	if (!debugfs_foo
++	    || debugfs_foo == ERR_PTR(-ENODEV)) {
++		pr_err("failed to create debugfs file: foo\n");
++		return 0;
++	}
+ 	return 0;
+ }
+ 
+-- 
+2.5.0
+
