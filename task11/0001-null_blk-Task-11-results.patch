@@ -1,0 +1,62 @@
+From fd81d3cd7ef43b8b08fc599c3311fe84e1070b83 Mon Sep 17 00:00:00 2001
+From: Gioh Kim <gi-oh.kim@profitbricks.com>
+Date: Thu, 16 Feb 2017 12:52:52 +0100
+Subject: [PATCH] null_blk: Task 11 results
+
+I've added id file into nullb_blk driver.
+
+Signed-off-by: Gioh Kim <gi-oh.kim@profitbricks.com>
+---
+ drivers/block/null_blk.c | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
+
+diff --git a/drivers/block/null_blk.c b/drivers/block/null_blk.c
+index 09e3c0d..c1ba5a7 100644
+--- a/drivers/block/null_blk.c
++++ b/drivers/block/null_blk.c
+@@ -144,6 +144,25 @@ static bool use_per_node_hctx = false;
+ module_param(use_per_node_hctx, bool, S_IRUGO);
+ MODULE_PARM_DESC(use_per_node_hctx, "Use per-node allocation for hardware context queues. Default: false");
+ 
++#define MYID "832a404c8ce0"
++#define MYIDLEN 12
++
++static ssize_t id_show(struct device *dev, struct device_attribute *attr,
++		       char *buf)
++{
++	return sprintf(buf, "%s\n", MYID);
++}
++
++static ssize_t id_store(struct device *dev, struct device_attribute *attr,
++			const char *buf, size_t count)
++{
++	if (count < MYIDLEN || strncmp(buf, MYID, count))
++		return -EINVAL;
++	return count;
++}
++
++static DEVICE_ATTR_RW(id);
++
+ static void put_tag(struct nullb_queue *nq, unsigned int tag)
+ {
+ 	clear_bit_unlock(tag, nq->tag_map);
+@@ -418,6 +437,7 @@ static void null_del_dev(struct nullb *nullb)
+ {
+ 	list_del_init(&nullb->list);
+ 
++	device_remove_file(disk_to_dev(nullb->disk), &dev_attr_id);
+ 	if (use_lightnvm)
+ 		nvm_unregister(nullb->disk_name);
+ 	else
+@@ -744,6 +764,8 @@ static int null_add_dev(void)
+ 	strncpy(disk->disk_name, nullb->disk_name, DISK_NAME_LEN);
+ 
+ 	add_disk(disk);
++
++	device_create_file(disk_to_dev(disk), &dev_attr_id);
+ done:
+ 	return 0;
+ 
+-- 
+2.5.0
+
