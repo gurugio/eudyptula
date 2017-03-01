@@ -21,6 +21,7 @@ struct identity {
 };
 
 static LIST_HEAD(all_identity);
+static struct kmem_cache *id_cache;
 
 
 static int identity_create(char *name, int id)
@@ -30,7 +31,7 @@ static int identity_create(char *name, int id)
 	if (!name || id <= 0)
 		return -EINVAL;
 
-	idp = kzalloc(sizeof(*idp), GFP_KERNEL);
+	idp = kmem_cache_alloc(id_cache, GFP_KERNEL);
 	if (!id)
 		return -ENOMEM;
 
@@ -59,7 +60,7 @@ static void identity_destroy(int id)
 	list_for_each_entry_safe(idp, idn, &all_identity, list) {
 		if (idp->id == id) {
 			list_del(&idp->list);
-			kfree(idp);
+			kmem_cache_free(id_cache, idp);
 		}
 	}
 }
@@ -80,6 +81,12 @@ static int __init hello_init(void)
 	int ret;
 
 	pr_debug("start hello_init\n");
+
+	id_cache = KMEM_CACHE(identity, 0);
+	if (!id_cache) {
+		pr_err("KMEM_CACHE failed\n");
+		return 0;
+	}
 
 	ret = identity_create("Alice", 1);
 	if (ret)
@@ -129,6 +136,7 @@ static void __exit hello_exit(void)
 		pr_err("There are remain identities\n");
 		identity_flush();
 	}
+	kmem_cache_destroy(id_cache);
 }
 
 module_init(hello_init);
