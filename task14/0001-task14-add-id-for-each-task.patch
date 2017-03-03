@@ -1,0 +1,80 @@
+From 67070f7e1763cf4208f3165c88c741f16a17da22 Mon Sep 17 00:00:00 2001
+From: Gioh Kim <gi-oh.kim@profitbricks.com>
+Date: Fri, 3 Mar 2017 12:26:52 +0100
+Subject: [PATCH] task14: add id for each task
+
+add /proc/${PID}/id for each task that show my id.
+kernel version: 4.4.0
+
+Signed-off-by: Gioh Kim <gi-oh.kim@profitbricks.com>
+---
+ fs/proc/base.c        | 9 +++++++++
+ include/linux/sched.h | 4 ++++
+ kernel/fork.c         | 2 ++
+ 3 files changed, 15 insertions(+)
+
+diff --git a/fs/proc/base.c b/fs/proc/base.c
+index 4bd5d31..f561a4a 100644
+--- a/fs/proc/base.c
++++ b/fs/proc/base.c
+@@ -2722,6 +2722,14 @@ static int proc_pid_personality(struct seq_file *m, struct pid_namespace *ns,
+ 	return err;
+ }
+ 
++static int proc_id_printing(struct seq_file *m, struct pid_namespace *ns,
++				   struct pid *pid, struct task_struct *task)
++{
++	seq_printf(m, "0x%lx\n", task->id);
++	task->id++;
++	return 0;
++}
++
+ /*
+  * Thread groups
+  */
+@@ -2820,6 +2828,7 @@ static const struct pid_entry tgid_base_stuff[] = {
+ #ifdef CONFIG_CHECKPOINT_RESTORE
+ 	REG("timers",	  S_IRUGO, proc_timers_operations),
+ #endif
++	ONE("id",	  S_IRUGO, proc_id_printing),
+ };
+ 
+ static int proc_tgid_base_readdir(struct file *file, struct dir_context *ctx)
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index fa39434..78d2fc4 100644
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -1375,6 +1375,8 @@ struct tlbflush_unmap_batch {
+ 	bool writable;
+ };
+ 
++#define INITIAL_TASK_ID 0x832a404c8ce0
++
+ struct task_struct {
+ 	volatile long state;	/* -1 unrunnable, 0 runnable, >0 stopped */
+ 	void *stack;
+@@ -1813,6 +1815,8 @@ struct task_struct {
+ 	unsigned long	task_state_change;
+ #endif
+ 	int pagefault_disabled;
++
++	unsigned long id; /* Eudyptulla Challenge task14 */
+ /* CPU-specific state of this task */
+ 	struct thread_struct thread;
+ /*
+diff --git a/kernel/fork.c b/kernel/fork.c
+index 1155eac..c6539cc 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -382,6 +382,8 @@ static struct task_struct *dup_task_struct(struct task_struct *orig)
+ 	tsk->task_frag.page = NULL;
+ 	tsk->wake_q.next = NULL;
+ 
++	tsk->id = INITIAL_TASK_ID;
++
+ 	account_kernel_stack(ti, 1);
+ 
+ 	return tsk;
+-- 
+2.5.0
+
